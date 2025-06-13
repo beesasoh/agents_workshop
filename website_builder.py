@@ -10,81 +10,50 @@ load_dotenv()
 class WebsiteBuilder:
     """A class for building business websites based on business model data."""
     
-    def __init__(self, business: Business):
-        """Initialize the WebsiteBuilder with a business model.
-        
-        Args:
-            business: A Business model instance containing all business information
-        """
-        self.business = business
+    def build(self, business: Business):
 
-
-
-    def build(self):
-
-        instructions = f"""
-            You are a professional website builder assistant specializing in modern, responsive web design.
-            Use Tailwind CSS framework for styling to create beautiful, professional websites.
-            Generate HTML content based on user requests and use the write_html_to_file tool to save it to a file.
-            Always include proper meta tags, responsive design, and modern UI components.
-        """
-
-        agent = Agent(
-            name="Website Builder",
-            instructions=instructions,
-            tools=[write_html_to_file],
+        content_design_agent = Agent(
+            name="Content Design Agent",
+            model="gpt-4o-mini",
+            instructions=f"""
+                You are a professional content designer.
+                Your task is to buid content for the website for {business}.
+                Describe each section of the website and the content that should be in it.
+                Must have clear call to actions and a clear value proposition.
+                Social proof elements and trust badges and certifications.
+            """,
         )
 
-        prompt = f"""Create a modern, professional HTML website for {self.business.businessName}.
+        design_agent = Agent(
+            name="Design Agent",
+            model="gpt-4o-mini",
+            instructions=f"""
+                You are a professional website designer.
+                Your task is to come up with the best theme colors for the business: {business}.
+                Make the colors match the business and the industry. Suggest primary and secondary colors.
+            """,
+        )
 
-        Business Details:
-        - Name: {self.business.businessName}
-        - Description: {self.business.businessDescription}
-        - Tagline: {self.business.tagline}
-        - Value Proposition: {self.business.coreValueProposition}
-        - Target Audience: {self.business.primaryTargetAudience}
-        - Demographics: {self.business.demographics}
+        frontend_agent = Agent(
+            name="Frontend Agent",
+            model="gpt-4o",
+            tools=[write_html_to_file],
+            instructions=f"""
+                You are a professional frontend developer.
+                Your task is to built the best frontend single page website for the business. 
+                You will receive the content and theme colors.
+                You will use the Bootstrap CSS framework to create the frontend.
+                You will use the write_html_to_file tool to save the frontend to a file.
+                Always include proper meta tags, responsive design, and modern UI components.
+            """,
+        )
 
-        Website Requirements:
-        1. Modern Design:
-           - Use Tailwind CSS for styling
-           - Implement a clean, professional layout
-           - Include a responsive navigation menu
-           - Add smooth animations and transitions
-           - Use modern typography and color schemes
+        content = Runner.run_sync(content_design_agent, f"Design the content for the website for {business}").final_output
+        theme = Runner.run_sync(design_agent, f"Design the theme colors for the website for {business}").final_output
+        
+        Runner.run_sync(frontend_agent, f"Build the frontend for the website with the following content and theme colors: {content} and {theme}").final_output
 
-        2. Key Sections:
-           - Hero section with compelling headline and CTA
-           - Features/Benefits section
-           - About/Company section
-           - Testimonials section (include 3-4 sample testimonials)
-           - Pricing/Plans section (if applicable)
-           - Contact section with form
-           - Footer with social links
-
-        3. Call-to-Actions:
-           - Primary CTA buttons for main actions
-           - Secondary CTAs for additional engagement
-           - Clear value proposition in CTAs
-
-        4. Mobile App Integration:
-           - Add app store download buttons (App Store and Google Play)
-           - Include app screenshots or mockups
-           - Highlight key app features
-
-        5. Additional Features:
-           - Social proof elements
-           - Trust badges and certifications
-           - Newsletter signup
-           - Social media integration
-           - FAQ section
-
-        Create a professional and modern website that effectively communicates the business details and drives conversions.
-        Ensure the design is responsive and works well on all devices.
-        Save the file using the write_html_to_file tool."""
-
-        result = Runner.run_sync(agent, prompt)
-        print(result.final_output)
+        print("Website built successfully")
 
 
 if __name__ == "__main__":
@@ -96,5 +65,5 @@ if __name__ == "__main__":
         primaryTargetAudience="Small to medium-sized businesses",
         demographics="Business owners and managers aged 25-45",
     )
-    builder = WebsiteBuilder(business)
-    builder.build()
+    builder = WebsiteBuilder()
+    builder.build(business)

@@ -7,5 +7,5 @@ class Founder:
 
 if __name__ == "__main__":
     business = Innovator().innovate("Ai bible chat app")
-    WebsiteBuilder(business).build()
+    WebsiteBuilder().build(business)
     MetaPaidMediaSpecialist().create_meta_paid_media_strategy(business)
